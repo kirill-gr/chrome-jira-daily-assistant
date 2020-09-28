@@ -15,14 +15,16 @@ function shuffleArray(array) {
 function init() {
     swimlanes.length = 0;
     document.querySelectorAll('[class~="ghx-swimlane"]').forEach(
-        (value) => swimlanes.push(value)
+        value => swimlanes.push(value)
     );
     shuffleArray(swimlanes);
     dailyState.current = 0;
+    let swimlaneIds = swimlanes.map(
+        value => value.attributes['swimlane-id'].value
+    );
     chrome.runtime.sendMessage({
         message: "initDoneEvt",
-        swimlaneCurrent: dailyState.current,
-        swimlanesTotal: swimlanes.length
+        swimlaneIds: swimlaneIds
     })
 }
 
@@ -41,6 +43,11 @@ function next() {
         message: "updateStateEvt",
         swimlaneCurrent: dailyState.current
     })
+    if (dailyState.current === swimlanes.length) {
+        chrome.runtime.sendMessage({
+            message: "noMoreParticipants"
+        })
+    }
 }
 
 chrome.runtime.onMessage.addListener(

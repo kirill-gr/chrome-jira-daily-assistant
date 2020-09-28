@@ -12,10 +12,14 @@ document.getElementById('next-person').onclick = function () {
 
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.message === 'initDoneEvt') {
-        document.getElementById("debug-swimlane").innerText = msg.swimlaneCurrent
-        document.getElementById("debug-swimlane-total").innerText = msg.swimlanesTotal
+        document.getElementById("debug-swimlane").innerText = "0"
+        document.getElementById("debug-swimlane-total").innerText = msg.swimlaneIds.length.toString()
+        document.getElementById("debug-status").innerText = "Started"
     }
     if (msg.message === 'updateStateEvt') {
         document.getElementById("debug-swimlane").innerText = msg.swimlaneCurrent
+    }
+    if (msg.message === 'noMoreParticipants') {
+        document.getElementById("debug-status").innerText = "Finished"
     }
 })

@@ -9,3 +9,16 @@ chrome.runtime.onInstalled.addListener(() => {
         }]);
     });
 });
+
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.message === 'initDoneEvt') {
+        chrome.storage.local.set({swimlineIds: msg.swimlaneIds})
+    }
+    if (msg.message === 'updateStateEvt') {
+        chrome.storage.local.set({currentSwimlaneId: msg.swimlaneCurrent})
+    }
+    if (msg.message === 'noMoreParticipants') {
+        chrome.storage.local.remove("swimlineIds")
+        chrome.storage.local.remove("currentSwimlaneId")
+    }
+})
