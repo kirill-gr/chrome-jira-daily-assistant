@@ -1,9 +1,7 @@
 let dailyState = {
     current: 0
 };
-let swimlanes = [];
-
-let pool = document.getElementById("ghx-pool");
+let swimlaneIds = [];
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -13,15 +11,12 @@ function shuffleArray(array) {
 }
 
 function init() {
-    swimlanes.length = 0;
+    swimlaneIds.length = 0;
     document.querySelectorAll('[class~="ghx-swimlane"]').forEach(
-        value => swimlanes.push(value)
+        value => swimlaneIds.push(value.attributes['swimlane-id'].value)
     );
-    shuffleArray(swimlanes);
+    shuffleArray(swimlaneIds);
     dailyState.current = 0;
-    let swimlaneIds = swimlanes.map(
-        value => value.attributes['swimlane-id'].value
-    );
     chrome.runtime.sendMessage({
         message: "initDoneEvt",
         swimlaneIds: swimlaneIds
@@ -29,11 +24,16 @@ function init() {
 }
 
 function next() {
-    let swimlane = swimlanes[dailyState.current++];
+    if (dailyState.current === swimlaneIds.length) {
+        return
+    }
+    let swimlaneId = swimlaneIds[dailyState.current++];
+    let swimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
     swimlane.scrollIntoView();
     let columnHeaders = document.getElementById("ghx-column-headers");
     let headerStalker = document.getElementById("ghx-swimlane-header-stalker");
     // workaround for column headers covering the swimlane
+    let pool = document.getElementById("ghx-pool");
     if (swimlane.classList.contains("ghx-first")) {
         pool.scrollBy(0, -(columnHeaders.offsetHeight + headerStalker.offsetHeight))
     } else {
@@ -43,7 +43,7 @@ function next() {
         message: "updateStateEvt",
         swimlaneCurrent: dailyState.current
     })
-    if (dailyState.current === swimlanes.length) {
+    if (dailyState.current === swimlaneIds.length) {
         chrome.runtime.sendMessage({
             message: "noMoreParticipants"
         })
