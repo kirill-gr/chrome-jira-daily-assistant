@@ -1,7 +1,20 @@
 let dailyState = {
-    current: 0
+    current: 0,
+    swimlaneIds: []
 };
-let swimlaneIds = [];
+
+chrome.storage.local.get("currentSwimlaneId", (value) => {
+    console.log(value.currentSwimlaneId)
+    if (!!value.currentSwimlaneId) {
+        dailyState.current = Number.parseFloat(value.currentSwimlaneId)
+    }
+})
+chrome.storage.local.get("swimlineIds", (value) => {
+    console.log(value.swimlineIds)
+    if (!!value.swimlineIds) {
+        dailyState.swimlaneIds = value.swimlineIds;
+    }
+})
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -11,23 +24,36 @@ function shuffleArray(array) {
 }
 
 function init() {
-    swimlaneIds.length = 0;
+    dailyState.swimlaneIds.length = 0;
     document.querySelectorAll('[class~="ghx-swimlane"]').forEach(
-        value => swimlaneIds.push(value.attributes['swimlane-id'].value)
+        value => dailyState.swimlaneIds.push(value.attributes['swimlane-id'].value)
     );
-    shuffleArray(swimlaneIds);
+    shuffleArray(dailyState.swimlaneIds);
     dailyState.current = 0;
     chrome.runtime.sendMessage({
         message: "initDoneEvt",
-        swimlaneIds: swimlaneIds
+        swimlaneIds: dailyState.swimlaneIds
     })
 }
 
 function next() {
-    if (dailyState.current === swimlaneIds.length) {
+    if (dailyState.current === dailyState.swimlaneIds.length) {
         return
     }
-    let swimlaneId = swimlaneIds[dailyState.current++];
+    let swimlaneId = dailyState.swimlaneIds[dailyState.current++];
+    scrollTo(swimlaneId);
+    chrome.runtime.sendMessage({
+        message: "updateStateEvt",
+        swimlaneCurrent: dailyState.current
+    })
+    if (dailyState.current === dailyState.swimlaneIds.length) {
+        chrome.runtime.sendMessage({
+            message: "noMoreParticipants"
+        })
+    }
+}
+
+let scrollTo = function (swimlaneId) {
     let swimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
     swimlane.scrollIntoView();
     let columnHeaders = document.getElementById("ghx-column-headers");
@@ -39,16 +65,7 @@ function next() {
     } else {
         pool.scrollBy(0, -(headerStalker.offsetHeight - 1));
     }
-    chrome.runtime.sendMessage({
-        message: "updateStateEvt",
-        swimlaneCurrent: dailyState.current
-    })
-    if (dailyState.current === swimlaneIds.length) {
-        chrome.runtime.sendMessage({
-            message: "noMoreParticipants"
-        })
-    }
-}
+};
 
 chrome.runtime.onMessage.addListener(
     (request) => {
