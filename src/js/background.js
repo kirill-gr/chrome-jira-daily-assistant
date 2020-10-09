@@ -12,7 +12,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.message === 'initDoneEvt') {
-        chrome.storage.local.set({currentSwimlaneId: msg.swimlaneIds})
+        chrome.storage.local.set({currentSwimlaneId: msg.swimlaneCurrent})
         chrome.storage.local.set({swimlineIds: msg.swimlaneIds})
         chrome.storage.local.set({dailyStatus: "ongoing"})
     }

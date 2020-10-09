@@ -4,13 +4,11 @@ let dailyState = {
 };
 
 chrome.storage.local.get("currentSwimlaneId", (value) => {
-    console.log(value.currentSwimlaneId)
     if (!!value.currentSwimlaneId) {
         dailyState.current = Number.parseFloat(value.currentSwimlaneId)
     }
 })
 chrome.storage.local.get("swimlineIds", (value) => {
-    console.log(value.swimlineIds)
     if (!!value.swimlineIds) {
         dailyState.swimlaneIds = value.swimlineIds;
     }
@@ -25,8 +23,14 @@ function shuffleArray(array) {
 
 function init() {
     dailyState.swimlaneIds.length = 0;
-    document.querySelectorAll('[class~="ghx-swimlane"]').forEach(
-        value => dailyState.swimlaneIds.push(value.attributes['swimlane-id'].value)
+    let swimlanes = document.querySelectorAll('[class~="ghx-swimlane"]');
+    swimlanes.forEach(
+        value => {
+            let swimlaneId = value.attributes['swimlane-id'].value;
+            if (parseInt(swimlaneId) !== swimlanes.length) {
+                dailyState.swimlaneIds.push(swimlaneId);
+            }
+        }
     );
     shuffleArray(dailyState.swimlaneIds);
     dailyState.current = 0;
@@ -41,7 +45,8 @@ function next() {
         return
     }
     let swimlaneId = dailyState.swimlaneIds[dailyState.current++];
-    scrollTo(swimlaneId);
+    let swimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
+    scrollTo(swimlane);
     chrome.runtime.sendMessage({
         message: "updateStateEvt",
         swimlaneCurrent: dailyState.current
@@ -53,8 +58,10 @@ function next() {
     }
 }
 
-let scrollTo = function (swimlaneId) {
-    let swimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
+/**
+ * @param {Element} swimlane
+ */
+let scrollTo = swimlane => {
     swimlane.scrollIntoView();
     let columnHeaders = document.getElementById("ghx-column-headers");
     let headerStalker = document.getElementById("ghx-swimlane-header-stalker");
