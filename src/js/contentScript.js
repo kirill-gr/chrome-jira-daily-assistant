@@ -34,6 +34,9 @@ function init() {
     );
     shuffleArray(dailyState.swimlaneIds);
     dailyState.current = 0;
+    let allSwimlanes = document.getElementsByClassName("ghx-swimlane")
+    collapseSwimlanes(allSwimlanes)
+
     chrome.runtime.sendMessage({
         message: "initDoneEvt",
         swimlaneIds: dailyState.swimlaneIds
@@ -41,12 +44,16 @@ function init() {
 }
 
 function next() {
+    let allSwimlanes = document.getElementsByClassName("ghx-swimlane")
     if (dailyState.current === dailyState.swimlaneIds.length) {
+        expandSwimlanes(allSwimlanes);
         return
     }
+    collapseSwimlanes(allSwimlanes);
     let swimlaneId = dailyState.swimlaneIds[dailyState.current++];
-    let swimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
-    scrollTo(swimlane);
+    let currentSwimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
+
+    scrollTo(currentSwimlane);
     chrome.runtime.sendMessage({
         message: "updateStateEvt",
         swimlaneCurrent: dailyState.current
@@ -59,13 +66,36 @@ function next() {
 }
 
 /**
+ * @param {HTMLCollectionOf<Element>} swimlanes
+ */
+let expandSwimlanes = (swimlanes) => {
+    for (let swimlane of swimlanes) {
+        if (swimlane.classList.contains("ghx-closed")) {
+            swimlane.getElementsByClassName("ghx-expander")[0].click()
+        }
+    }
+};
+
+/**
+ * @param {HTMLCollectionOf<Element>} swimlanes
+ */
+let collapseSwimlanes = (swimlanes) => {
+    for (let swimlane of swimlanes) {
+        if (!swimlane.classList.contains("ghx-closed")) {
+            swimlane.getElementsByClassName("ghx-expander")[0].click()
+        }
+    }
+};
+
+/**
  * @param {Element} swimlane
  */
 let scrollTo = swimlane => {
+    swimlane.getElementsByClassName("ghx-expander")[0].click()
     swimlane.scrollIntoView();
+    // workaround for column headers covering the swimlane
     let columnHeaders = document.getElementById("ghx-column-headers");
     let headerStalker = document.getElementById("ghx-swimlane-header-stalker");
-    // workaround for column headers covering the swimlane
     let pool = document.getElementById("ghx-pool");
     if (swimlane.classList.contains("ghx-first")) {
         pool.scrollBy(0, -(columnHeaders.offsetHeight + headerStalker.offsetHeight))
