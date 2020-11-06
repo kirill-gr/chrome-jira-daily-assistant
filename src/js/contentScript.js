@@ -1,19 +1,3 @@
-let dailyState = {
-    current: 0,
-    swimlaneIds: []
-};
-
-chrome.storage.local.get("currentSwimlaneId", (value) => {
-    if (!!value.currentSwimlaneId) {
-        dailyState.current = Number.parseFloat(value.currentSwimlaneId)
-    }
-})
-chrome.storage.local.get("swimlineIds", (value) => {
-    if (!!value.swimlineIds) {
-        dailyState.swimlaneIds = value.swimlineIds;
-    }
-})
-
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -22,75 +6,88 @@ function shuffleArray(array) {
 }
 
 function init() {
-    dailyState.swimlaneIds.length = 0;
-    let swimlanes = document.querySelectorAll('[class~="ghx-swimlane"]');
-    swimlanes.forEach(
-        value => {
-            let swimlaneId = value.attributes['swimlane-id'].value;
-            if (parseInt(swimlaneId) !== swimlanes.length) {
-                dailyState.swimlaneIds.push(swimlaneId);
-            }
-        }
-    );
-    shuffleArray(dailyState.swimlaneIds);
-    dailyState.current = 0;
+    let swimlaneIds = [];
     let allSwimlanes = document.getElementsByClassName("ghx-swimlane")
-    collapseSwimlanes(allSwimlanes)
+    for (let swimlane of allSwimlanes) {
+        let swimlaneId = swimlane.attributes['swimlane-id'].value;
+        if (parseInt(swimlaneId) !== allSwimlanes.length) {
+            swimlaneIds.push(swimlaneId);
+        }
+        collapse(swimlane);
+    }
+    shuffleArray(swimlaneIds);
 
-    chrome.runtime.sendMessage({
-        message: "initDoneEvt",
-        swimlaneIds: dailyState.swimlaneIds
-    })
+    chrome.storage.local.set({currentSwimlaneId: 0})
+    chrome.storage.local.set({swimlaneIds: swimlaneIds})
+    chrome.storage.local.set({dailyStatus: "ongoing"})
 }
 
 function next() {
     let allSwimlanes = document.getElementsByClassName("ghx-swimlane")
-    if (dailyState.current === dailyState.swimlaneIds.length) {
-        expandSwimlanes(allSwimlanes);
-        return
-    }
-    collapseSwimlanes(allSwimlanes);
-    let swimlaneId = dailyState.swimlaneIds[dailyState.current++];
-    let currentSwimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
 
-    scrollTo(currentSwimlane);
-    chrome.runtime.sendMessage({
-        message: "updateStateEvt",
-        swimlaneCurrent: dailyState.current
+    chrome.storage.local.get(["currentSwimlaneId", "swimlaneIds"], (value) => {
+        let swimlaneIds;
+        let currentSwimlaneId;
+
+        if (!!value.swimlaneIds) {
+            swimlaneIds = value.swimlaneIds;
+        } else {
+            alert("Init first");
+            return
+        }
+
+        if (!!value.currentSwimlaneId) {
+            currentSwimlaneId = Number.parseFloat(value.currentSwimlaneId)
+        } else {
+            currentSwimlaneId = 0
+        }
+
+        if (currentSwimlaneId === swimlaneIds.length) {
+            expandSwimlanes(allSwimlanes);
+            return
+        }
+        for (let swimlane of allSwimlanes) {
+            collapse(swimlane);
+        }
+        let swimlaneId = swimlaneIds[currentSwimlaneId++];
+        let currentSwimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
+
+        scrollTo(currentSwimlane);
+
+        if (currentSwimlaneId < swimlaneIds.length) {
+            chrome.storage.local.set({currentSwimlaneId: currentSwimlaneId})
+        } else {
+            chrome.storage.local.remove("swimlaneIds")
+            chrome.storage.local.remove("currentSwimlaneId")
+            chrome.storage.local.remove("dailyStatus")
+        }
     })
-    if (dailyState.current === dailyState.swimlaneIds.length) {
-        chrome.runtime.sendMessage({
-            message: "noMoreParticipants"
-        })
-    }
 }
 
 /**
  * @param {HTMLCollectionOf<Element>} swimlanes
  */
-let expandSwimlanes = (swimlanes) => {
+function expandSwimlanes(swimlanes) {
     for (let swimlane of swimlanes) {
         if (swimlane.classList.contains("ghx-closed")) {
             swimlane.getElementsByClassName("ghx-expander")[0].click()
         }
     }
-};
-
-/**
- * @param {HTMLCollectionOf<Element>} swimlanes
- */
-let collapseSwimlanes = (swimlanes) => {
-    for (let swimlane of swimlanes) {
-        if (!swimlane.classList.contains("ghx-closed")) {
-            swimlane.getElementsByClassName("ghx-expander")[0].click()
-        }
-    }
-};
+}
 
 /**
  * @param {Element} swimlane
  */
-let scrollTo = swimlane => {
+function collapse(swimlane) {
+    if (!swimlane.classList.contains("ghx-closed")) {
+        swimlane.getElementsByClassName("ghx-expander")[0].click()
+    }
+}
+
+/**
+ * @param {Element} swimlane
+ */
+function scrollTo(swimlane) {
     swimlane.getElementsByClassName("ghx-expander")[0].click()
     swimlane.scrollIntoView();
     // workaround for column headers covering the swimlane
@@ -102,7 +99,7 @@ let scrollTo = swimlane => {
     } else {
         pool.scrollBy(0, -(headerStalker.offsetHeight - 1));
     }
-};
+}
 
 chrome.runtime.onMessage.addListener(
     (request) => {
