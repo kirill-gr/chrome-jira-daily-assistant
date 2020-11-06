@@ -17,32 +17,23 @@ function init() {
     }
     shuffleArray(swimlaneIds);
 
-    chrome.storage.local.set({currentSwimlaneId: 0})
-    chrome.storage.local.set({swimlaneIds: swimlaneIds})
-    chrome.storage.local.set({dailyStatus: "ongoing"})
+    chrome.storage.local.set({currentSwimlaneId: 0, swimlaneIds: swimlaneIds, dailyStatus: "ongoing"}, () => next())
 }
 
 function next() {
-    let allSwimlanes = document.getElementsByClassName("ghx-swimlane")
-
     chrome.storage.local.get(["currentSwimlaneId", "swimlaneIds"], (value) => {
         let swimlaneIds;
         let currentSwimlaneId;
 
-        if (!!value.swimlaneIds) {
-            swimlaneIds = value.swimlaneIds;
-        } else {
-            alert("Init first");
+        if (!value.swimlaneIds || (!value.currentSwimlaneId && value.currentSwimlaneId !== 0)) {
+            init()
             return
         }
 
-        if (!!value.currentSwimlaneId || value.currentSwimlaneId === 0) {
-            currentSwimlaneId = Number.parseFloat(value.currentSwimlaneId)
-        } else {
-            alert("Init first");
-            return
-        }
+        swimlaneIds = value.swimlaneIds;
+        currentSwimlaneId = value.currentSwimlaneId;
 
+        let allSwimlanes = document.getElementsByClassName("ghx-swimlane")
         if (currentSwimlaneId < swimlaneIds.length) {
             for (let swimlane of allSwimlanes) {
                 collapse(swimlane);
@@ -54,22 +45,9 @@ function next() {
             chrome.storage.local.set({currentSwimlaneId: currentSwimlaneId})
         } else {
             expandSwimlanes(allSwimlanes);
-            chrome.storage.local.remove("swimlaneIds")
-            chrome.storage.local.remove("currentSwimlaneId")
-            chrome.storage.local.remove("dailyStatus")
+            resetState();
         }
     })
-}
-
-/**
- * @param {HTMLCollectionOf<Element>} swimlanes
- */
-function expandSwimlanes(swimlanes) {
-    for (let swimlane of swimlanes) {
-        if (swimlane.classList.contains("ghx-closed")) {
-            swimlane.getElementsByClassName("ghx-expander")[0].click()
-        }
-    }
 }
 
 /**
@@ -98,13 +76,28 @@ function scrollTo(swimlane) {
     }
 }
 
+/**
+ * @param {HTMLCollectionOf<Element>} swimlanes
+ */
+function expandSwimlanes(swimlanes) {
+    for (let swimlane of swimlanes) {
+        if (swimlane.classList.contains("ghx-closed")) {
+            swimlane.getElementsByClassName("ghx-expander")[0].click()
+        }
+    }
+}
+
+function resetState() {
+    chrome.storage.local.remove(["swimlaneIds", "currentSwimlaneId", "dailyStatus"])
+}
+
 chrome.runtime.onMessage.addListener(
     (request) => {
         switch (request.message) {
-            case "startDaily":
-                init();
+            case "restart":
+                resetState();
                 break;
-            case "nextPerson":
+            case "proceed":
                 next();
                 break;
             default:

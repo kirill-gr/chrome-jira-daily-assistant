@@ -3,15 +3,15 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSwimlanesTotal();
     updateStatus();
 
-    document.getElementById("start-daily").onclick = () => {
+    document.getElementById("restart").onclick = () => {
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {message: "startDaily"});
+            chrome.tabs.sendMessage(tabs[0].id, {message: "restart"});
         });
     };
 
-    document.getElementById("next-person").onclick = () => {
+    document.getElementById("proceed").onclick = () => {
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {message: "nextPerson"});
+            chrome.tabs.sendMessage(tabs[0].id, {message: "proceed"});
         });
     };
 })
@@ -49,6 +49,11 @@ function updateSwimlanesTotal() {
 function updateStatus() {
     chrome.storage.local.get("dailyStatus", (value) => {
         setDebugStatus(value.dailyStatus)
+        if (value.dailyStatus === "ongoing") {
+            document.getElementById("proceed").innerText = "Next person"
+        } else {
+            document.getElementById("proceed").innerText = "Start daily"
+        }
     })
 }
 
