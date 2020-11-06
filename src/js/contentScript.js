@@ -36,27 +36,24 @@ function next() {
             return
         }
 
-        if (!!value.currentSwimlaneId) {
+        if (!!value.currentSwimlaneId || value.currentSwimlaneId === 0) {
             currentSwimlaneId = Number.parseFloat(value.currentSwimlaneId)
         } else {
-            currentSwimlaneId = 0
-        }
-
-        if (currentSwimlaneId === swimlaneIds.length) {
-            expandSwimlanes(allSwimlanes);
+            alert("Init first");
             return
         }
-        for (let swimlane of allSwimlanes) {
-            collapse(swimlane);
-        }
-        let swimlaneId = swimlaneIds[currentSwimlaneId++];
-        let currentSwimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
-
-        scrollTo(currentSwimlane);
 
         if (currentSwimlaneId < swimlaneIds.length) {
+            for (let swimlane of allSwimlanes) {
+                collapse(swimlane);
+            }
+            let swimlaneId = swimlaneIds[currentSwimlaneId++];
+            let currentSwimlane = document.querySelector(`[class~="ghx-swimlane"][swimlane-id="${swimlaneId}"]`);
+
+            scrollTo(currentSwimlane);
             chrome.storage.local.set({currentSwimlaneId: currentSwimlaneId})
         } else {
+            expandSwimlanes(allSwimlanes);
             chrome.storage.local.remove("swimlaneIds")
             chrome.storage.local.remove("currentSwimlaneId")
             chrome.storage.local.remove("dailyStatus")
