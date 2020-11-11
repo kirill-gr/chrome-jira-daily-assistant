@@ -1,25 +1,27 @@
+function sendMessage(message) {
+    return () => {
+        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, message);
+        });
+    };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    updateCurrentSwimlane();
+    updateNextSwimlane();
     updateSwimlanesTotal();
     updateStatus();
 
-    document.getElementById("restart").onclick = () => {
-        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {message: "restart"});
-        });
-    };
+    document.getElementById("restart").onclick = sendMessage({message: "restart"});
 
-    document.getElementById("proceed").onclick = () => {
-        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {message: "proceed"});
-        });
-    };
+    document.getElementById("proceed").onclick = sendMessage({message: "proceed"});
+
+    document.getElementById("scrollToCurrent").onclick = sendMessage({message: "scrollToCurrent"});
 })
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "local") {
-        if ("currentSwimlaneId" in changes) {
-            updateCurrentSwimlane()
+        if ("nextSwimlaneId" in changes) {
+            updateNextSwimlane()
         }
         if ("swimlaneIds" in changes) {
             updateSwimlanesTotal()
@@ -30,9 +32,9 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
 })
 
-function updateCurrentSwimlane() {
-    chrome.storage.local.get("currentSwimlaneId", (value) => {
-        setDebugSwimlane(value.currentSwimlaneId)
+function updateNextSwimlane() {
+    chrome.storage.local.get("nextSwimlaneId", (value) => {
+        setDebugSwimlane(value.nextSwimlaneId)
     })
 }
 
@@ -51,8 +53,10 @@ function updateStatus() {
         setDebugStatus(value.dailyStatus)
         if (value.dailyStatus === "ongoing") {
             document.getElementById("proceed").innerText = "Next person"
+            document.getElementById("scrollToCurrent").disabled = false
         } else {
             document.getElementById("proceed").innerText = "Start daily"
+            document.getElementById("scrollToCurrent").disabled = true
         }
     })
 }
