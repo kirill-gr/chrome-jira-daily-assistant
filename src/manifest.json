@@ -2,9 +2,15 @@
   "name": "Stand-Up Organizer",
   "version": "1",
   "description": "Make stand-ups fun again!",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "background": {
     "scripts": [
-      "background.js"
+      "js/background.js"
     ],
     "persistent": false
   },
@@ -15,7 +21,7 @@
   ],
   "page_action": {
     "default_title": "Daily Stand up JIRA helper",
-    "default_popup": "popup.html"
+    "default_popup": "js/popup.html"
   },
   "content_scripts": [
     {
@@ -23,7 +29,7 @@
         "https://*/*/RapidBoard.jspa*"
       ],
       "js": [
-        "contentScript.js"
+        "js/contentScript.js"
       ]
     }
   ],
