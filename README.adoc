@@ -20,7 +20,7 @@ the dropdown menu).
 Replace the extension files with the new version and click "Update" button (top-left corner).
 
 == Usage
-An extension appears as a "JDA" button. If a Kanban board is opened (RapidBoard.jspa), the extension can control it.
+An extension appears as a "D" button. If a Kanban board is opened (RapidBoard.jspa), the extension can control it.
 
 Click "Start daily" to navigate to the first participant. The button will turn into "Next person". Clicking it will
 select the next person.
